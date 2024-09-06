@@ -1,4 +1,5 @@
 import eventSchema from "../Models/eventSchema.js";
+import userSchema from "../Models/userSchema.js";
 
 
 export const AddEvent = async (req , res) => {
@@ -144,3 +145,53 @@ export const DeleteEvent = async (req, res) => {
         });
     }
 };
+
+export const GetSingleEvent = async (req , res) =>{
+    try {
+        const { id } = req.params; 
+        const event = await eventSchema.findById(id).populate({path:'organizer',select:'firstName'})
+        if (!event) {
+            return res.status(404).json({success:false , message : 'event not found'})
+        }
+        return res.status(200).json({success:true , message : 'event found' , data:event})
+    }catch(error){
+        console.log(error)
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+}
+
+export const BookEvent = async (req , res) => {
+    try{
+       const {amount , id , userId} = req.params
+            const getEvent = await eventSchema.findById(id)
+            if(!getEvent){
+                return res.status(404).json({success:false , message : 'event not found'})
+            }
+           
+            const getUser = await userSchema.findById(userId)
+            if(!getUser){
+                return res.status(404).json({success:false , message : 'user not found'})
+            }
+            if(getEvent.freeTickets > 0){
+                console.log(getEvent.freeTickets)
+                getEvent.freeTickets -= 1
+                
+            }else if(parseInt(amount) !== getEvent.ticketPrice){
+                return res.status(400).json({success:false , message : 'invalid ticket price'})
+            }
+            getEvent.peopleLimit -= 1
+            getUser.eventsRegistered.push(id)
+            await userSchema.findByIdAndUpdate(userId , getUser)
+            await eventSchema.findByIdAndUpdate(id , getEvent)
+            return res.status(200).json({success:true , message:'event booked successfully'})
+    }catch(error){
+        console.log(error)
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+}

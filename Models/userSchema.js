@@ -66,7 +66,11 @@ const User = new Schema({
     },
     postalCode:{
         type:String
-    }
+    },
+    eventsRegistered: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Event'  // Reference to the Event model
+      }]
 }, {
     timestamps: true
 });
